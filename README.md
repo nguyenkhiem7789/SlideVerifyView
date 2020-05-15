@@ -48,7 +48,7 @@ In XML:
         />
         
        
- In Java, you can listener when checked finish: 
+ In Kotlin, you can listener when checked finish: 
  
         verifyView.setVerifyCheckedListener(object : VerifyCheckedListener {
             override fun onChecked() {
