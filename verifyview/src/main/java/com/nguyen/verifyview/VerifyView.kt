@@ -19,9 +19,6 @@ class VerifyView : View {
         const val DEFAULT_TEXT_COLOR = Color.WHITE
     }
 
-    /* ---------------- Layout Bounds ---------------- */
-
-
     private var bgColor = DEFAULT_BACKGROUND_COLOR
 
     private var strokeColor = DEFAULT_STROKE_COLOR
@@ -188,22 +185,40 @@ class VerifyView : View {
         textPaint.color = textColor
     }
 
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        var width = 0
+        var height = 0
+
+        val widthMode = MeasureSpec.getMode(widthMeasureSpec)
+        val heightMode = MeasureSpec.getMode(heightMeasureSpec)
+        val widthSize = MeasureSpec.getSize(widthMeasureSpec)
+        val heightSize = MeasureSpec.getSize(heightMeasureSpec)
+
+        if(widthMode == MeasureSpec.EXACTLY) {
+            width = widthSize
+        } else if(widthMode == MeasureSpec.AT_MOST) {
+            width = widthSize
+        } else {
+            width = 0
+        }
+
+        if(heightMode == MeasureSpec.EXACTLY) {
+            height = heightSize
+        } else if(heightMode == MeasureSpec.AT_MOST) {
+            height = heightSize
+        } else {
+            height = 0
+        }
+        setMeasuredDimension(width, height)
+    }
+
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-
-    }
-
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-    }
-
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        ///draw background
         bgRect!!.set(
             strokeWidth.toFloat(), strokeWidth.toFloat(), width.toFloat() - strokeWidth,
             height.toFloat() - strokeWidth
@@ -215,6 +230,24 @@ class VerifyView : View {
             height.toFloat() - strokeWidth
         )
 
+        finishRect!!.set(
+            width - height - strokeWidth.toFloat(),
+            strokeWidth.toFloat(),
+            width.toFloat() - strokeWidth,
+            height.toFloat() - strokeWidth
+        )
+
+        finishImageRect!!.set(
+            width - height / 2 - strokeWidth.toFloat() - 12,
+            height / 2.toFloat() - 12,
+            width - height / 2 - strokeWidth.toFloat() + 12F,
+            height / 2.toFloat() + 12F
+        )
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        ///draw background
         canvas.drawRoundRect(borderBgRect!!, 8F, 8F, borderBgPaint)
         canvas.drawRoundRect(bgRect!!, 8F, 8F, bgPaint)
 
@@ -224,37 +257,21 @@ class VerifyView : View {
             height/2.toFloat() + xTouch,
             height.toFloat() - strokeWidth.toFloat())
         canvas.drawRoundRect(progressRect!!, 8F, 8F, progressPaint)
-
         thumbRect!!.set(
             strokeWidth.toFloat() + xTouch,
             strokeWidth.toFloat(),
             height.toFloat() - strokeWidth + xTouch,
             height.toFloat() - strokeWidth
         )
-        canvas.drawRoundRect(thumbRect!!, 8F, 8F, thumbPaint)
-
         thumbImageRect!!.set(
             thumbRect!!.width() / 2 - 12 + xTouch,
             thumbRect!!.height() / 2 - 12,
             thumbRect!!.width() / 2 + 12 + xTouch,
             thumbRect!!.height() / 2 + 12
         )
+        canvas.drawRoundRect(thumbRect!!, 8F, 8F, thumbPaint)
         canvas.drawBitmap(thumbImageBitmap!!, null, thumbImageRect!!, thumbImagePaint)
-
-        finishRect!!.set(
-            width - height - strokeWidth.toFloat(),
-            strokeWidth.toFloat(),
-            width.toFloat() - strokeWidth,
-            height.toFloat() - strokeWidth
-        )
         canvas.drawRoundRect(finishRect!!, 8F, 8F, finishPaint)
-
-        finishImageRect!!.set(
-            width - height / 2 - strokeWidth.toFloat() - 12,
-            height / 2.toFloat() - 12,
-            width - height / 2 - strokeWidth.toFloat() + 12F,
-            height / 2.toFloat() + 12F
-        )
         canvas.drawBitmap(finishImageBitmap!!, null, finishImageRect!!, finishImagePaint)
 
         val textHeight = textPaint.descent() - textPaint.ascent()
@@ -290,11 +307,11 @@ class VerifyView : View {
         return true
     }
 
-    fun checkInsideThumbnail(x: Float, y: Float): Boolean {
+    private fun checkInsideThumbnail(x: Float, y: Float): Boolean {
         return (0 < x && x < thumbRect!!.width() && 0 < y && y < thumbRect!!.height())
     }
 
-    fun checkInsideFinish(x: Float): Boolean {
+    private fun checkInsideFinish(x: Float): Boolean {
         return (width - height < x)
     }
 }
