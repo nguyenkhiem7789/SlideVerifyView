@@ -6,3 +6,26 @@ https://www.youtube.com/watch?v=-5KgXRADUMo
 
 # How to use it?
 
+In XML: 
+
+    <com.nguyen.verifyview.VerifyView
+        android:id="@+id/verifyView"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_margin="16dp"
+        app:verify_bg_color="@color/colorAccent"
+        app:verify_stroke_color="@color/colorAccent"
+        app:verify_stroke_width="1dp"
+        app:verify_text="Truợt sang phải để thao tác"
+        app:verify_progress_color="@color/colorPrimary"
+        app:verify_radius_image_thumb="8dp"
+        />
+        
+       
+ In Java, you can listener when checked finish: 
+ 
+        verifyView.setVerifyCheckedListener(object : VerifyCheckedListener {
+            override fun onChecked() {
+                Toast.makeText(applicationContext, "Checked", Toast.LENGTH_SHORT).show()
+            }
+        })
