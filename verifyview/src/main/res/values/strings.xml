@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">VerifyView</string>
+    <string name="default_text">Trượt sang phải để thao tác</string>
 </resources>

@@ -3,7 +3,9 @@ package com.nguyen.verifyview
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
+import androidx.core.content.ContextCompat
 
 class VerifyView : View {
 
@@ -13,7 +15,12 @@ class VerifyView : View {
         const val DEFAULT_STROKE_COLOR = Color.DKGRAY
 
         const val DEFAULT_STROKE_WIDTH = 1
+
+        const val DEFAULT_TEXT_COLOR = Color.WHITE
     }
+
+    /* ---------------- Layout Bounds ---------------- */
+
 
     private var bgColor = DEFAULT_BACKGROUND_COLOR
 
@@ -21,11 +28,29 @@ class VerifyView : View {
 
     private var strokeWidth = DEFAULT_STROKE_WIDTH
 
+    private var progressColor = ContextCompat.getColor(context, R.color.default_progress)
+
+    private var textColor = DEFAULT_TEXT_COLOR
+
     private var borderBgRect: RectF? = null
 
     private var bgRect: RectF? = null
 
     private var thumbRect: RectF? = null
+
+    private var finishRect: RectF? = null
+
+    private var progressRect: RectF? = null
+
+    private var editable: Boolean = false
+
+    private var text: String? = null
+
+    private var xTouch: Float = 0.0F
+        set(value) {
+            field = value
+            invalidate()
+        }
 
     private val bgPaint: Paint by lazy {
         Paint()
@@ -35,11 +60,31 @@ class VerifyView : View {
         Paint()
     }
 
+    private val finishPaint: Paint by lazy {
+        Paint()
+    }
+
+    private val progressPaint: Paint by lazy {
+        Paint()
+    }
+
+    private val textPaint: Paint by lazy {
+        Paint()
+    }
+
     private var thumbImageBitmap: Bitmap? = null
 
     private var thumbImageRect: RectF? = null
 
     private val thumbImagePaint: Paint by lazy {
+        Paint(Paint.FILTER_BITMAP_FLAG)
+    }
+
+    private var finishImageBitmap: Bitmap? = null
+
+    private var finishImageRect: RectF? = null
+
+    private val finishImagePaint: Paint by lazy {
         Paint(Paint.FILTER_BITMAP_FLAG)
     }
 
@@ -64,6 +109,7 @@ class VerifyView : View {
     }
 
     fun init() {
+        text = resources.getString(R.string.default_text)
         // background paint
         bgPaint.isAntiAlias = true
         bgPaint.color = bgColor
@@ -72,35 +118,83 @@ class VerifyView : View {
         borderBgPaint.strokeWidth = strokeWidth.toFloat()
         borderBgPaint.style = Paint.Style.STROKE
 
-        // load bitmap
-        thumbImagePaint.isAntiAlias = true
-        thumbImagePaint.isFilterBitmap = true
-        thumbImagePaint.isDither = true
-        thumbImageBitmap = BitmapFactory.decodeResource(resources, R.drawable.thumb)
-
-        // thumb paint
-        thumbPaint.isAntiAlias = true
-        thumbPaint.color = Color.WHITE
-
-        // background rect
-        bgRect = RectF(strokeWidth.toFloat(), strokeWidth.toFloat(), width.toFloat() - strokeWidth,
-            height.toFloat() - strokeWidth)
+        bgRect = RectF(
+            strokeWidth.toFloat(), strokeWidth.toFloat(), width.toFloat() - strokeWidth,
+            height.toFloat() - strokeWidth
+        )
         borderBgRect = RectF(
             strokeWidth.toFloat(),
             strokeWidth.toFloat(),
             width.toFloat() - strokeWidth,
-            height.toFloat() - strokeWidth)
+            height.toFloat() - strokeWidth
+        )
 
-        /// thumbRect
+        // thumb
+        thumbImagePaint.isFilterBitmap = true
+        thumbImageBitmap = BitmapFactory.decodeResource(resources, R.drawable.thumb)
+
+        thumbPaint.isAntiAlias = true
+        thumbPaint.color = Color.WHITE
+
         thumbRect = RectF(
             strokeWidth.toFloat(),
             strokeWidth.toFloat(),
             height.toFloat() - strokeWidth,
-            height.toFloat() - strokeWidth)
-        thumbImageRect = RectF(thumbRect!!.width()/2 - 12, thumbRect!!.height()/2 - 12, 24F, 24F)
+            height.toFloat() - strokeWidth
+        )
+        thumbImageRect = RectF(
+            thumbRect!!.width() / 2 - 12,
+            thumbRect!!.height() / 2 - 12,
+            thumbRect!!.width() / 2 + 12F,
+            thumbRect!!.height() / 2 + 12F
+        )
+
+        // finish
+        finishImagePaint.isFilterBitmap = true
+        finishImagePaint.color = Color.TRANSPARENT
+        finishImageBitmap = BitmapFactory.decodeResource(resources, R.drawable.checked)
+
+        finishPaint.isAntiAlias = true
+        finishPaint.color = Color.TRANSPARENT
+
+        finishRect = RectF(
+            width - height - strokeWidth.toFloat(),
+            strokeWidth.toFloat(),
+            width.toFloat() - strokeWidth,
+            height.toFloat() - strokeWidth
+        )
+        finishImageRect = RectF(
+            width - height / 2 - strokeWidth.toFloat() - 12,
+            height / 2.toFloat() - 12,
+            width - height / 2 - strokeWidth.toFloat() + 12F,
+            height / 2.toFloat() + 12F
+        )
+
+        // progress
+        progressPaint.isAntiAlias = true
+        progressPaint.color = progressColor
+
+        progressRect = RectF(
+            strokeWidth.toFloat(),
+            strokeWidth.toFloat(),
+            height/2.toFloat(),
+            height.toFloat() - strokeWidth.toFloat()
+        )
+
+        // text
+        textPaint.isAntiAlias = true
+        textPaint.textAlign = Paint.Align.CENTER
+        textPaint.textSize = 16 * resources.displayMetrics.density
+        textPaint.color = textColor
     }
 
-    override fun onLayout(p0: Boolean, p1: Int, p2: Int, p3: Int, p4: Int) {
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -110,26 +204,97 @@ class VerifyView : View {
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         ///draw background
-        bgRect!!.set(strokeWidth.toFloat(), strokeWidth.toFloat(), width.toFloat() - strokeWidth,
-            height.toFloat() - strokeWidth)
+        bgRect!!.set(
+            strokeWidth.toFloat(), strokeWidth.toFloat(), width.toFloat() - strokeWidth,
+            height.toFloat() - strokeWidth
+        )
         borderBgRect!!.set(
             strokeWidth.toFloat(),
             strokeWidth.toFloat(),
             width.toFloat() - strokeWidth,
-            height.toFloat() - strokeWidth)
-
+            height.toFloat() - strokeWidth
+        )
 
         canvas.drawRoundRect(borderBgRect!!, 8F, 8F, borderBgPaint)
         canvas.drawRoundRect(bgRect!!, 8F, 8F, bgPaint)
 
+        progressRect!!.set(
+            strokeWidth.toFloat(),
+            strokeWidth.toFloat(),
+            height/2.toFloat() + xTouch,
+            height.toFloat() - strokeWidth.toFloat())
+        canvas.drawRoundRect(progressRect!!, 8F, 8F, progressPaint)
+
         thumbRect!!.set(
+            strokeWidth.toFloat() + xTouch,
             strokeWidth.toFloat(),
-            strokeWidth.toFloat(),
-            height.toFloat() - strokeWidth,
-            height.toFloat() - strokeWidth)
+            height.toFloat() - strokeWidth + xTouch,
+            height.toFloat() - strokeWidth
+        )
         canvas.drawRoundRect(thumbRect!!, 8F, 8F, thumbPaint)
 
-        thumbImageRect!!.set(thumbRect!!.width()/2 - 10, thumbRect!!.height()/2 - 10, thumbRect!!.width()/2 + 10, thumbRect!!.height()/2 + 10)
+        thumbImageRect!!.set(
+            thumbRect!!.width() / 2 - 12 + xTouch,
+            thumbRect!!.height() / 2 - 12,
+            thumbRect!!.width() / 2 + 12 + xTouch,
+            thumbRect!!.height() / 2 + 12
+        )
         canvas.drawBitmap(thumbImageBitmap!!, null, thumbImageRect!!, thumbImagePaint)
+
+        finishRect!!.set(
+            width - height - strokeWidth.toFloat(),
+            strokeWidth.toFloat(),
+            width.toFloat() - strokeWidth,
+            height.toFloat() - strokeWidth
+        )
+        canvas.drawRoundRect(finishRect!!, 8F, 8F, finishPaint)
+
+        finishImageRect!!.set(
+            width - height / 2 - strokeWidth.toFloat() - 12,
+            height / 2.toFloat() - 12,
+            width - height / 2 - strokeWidth.toFloat() + 12F,
+            height / 2.toFloat() + 12F
+        )
+        canvas.drawBitmap(finishImageBitmap!!, null, finishImageRect!!, finishImagePaint)
+
+        val textHeight = textPaint.descent() - textPaint.ascent()
+        val textOffset = textHeight / 2 - textPaint.descent()
+        canvas.drawText(text!!, bgRect!!.centerX(), bgRect!!.centerY() + textOffset, textPaint)
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                if (checkInsideThumbnail(event.x, event.y)) {
+                    editable = true
+                }
+            }
+            MotionEvent.ACTION_MOVE -> {
+                if (editable) {
+                    xTouch = event.x
+                    if(checkInsideFinish(xTouch)) {
+                        editable = false
+                        thumbPaint.color = Color.TRANSPARENT
+                        thumbImagePaint.color = Color.TRANSPARENT
+                        finishPaint.color = Color.WHITE
+                        finishImagePaint.color = Color.WHITE
+                    }
+                }
+            }
+            MotionEvent.ACTION_UP -> {
+                if (editable) {
+                    xTouch = 0F
+                }
+            }
+        }
+        return true
+    }
+
+    fun checkInsideThumbnail(x: Float, y: Float): Boolean {
+        return (0 < x && x < thumbRect!!.width() && 0 < y && y < thumbRect!!.height())
+    }
+
+    fun checkInsideFinish(x: Float): Boolean {
+        return (width - height < x)
     }
 }
