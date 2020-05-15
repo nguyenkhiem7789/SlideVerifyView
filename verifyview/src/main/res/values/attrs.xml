@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="VerifyView">
+        <attr name="verify_bg_color" format="color"/>
+        <attr name="verify_stroke_color" format="color"/>
+        <attr name="verify_stroke_width" format="dimension"/>
+        <attr name="verify_text" format="string"/>
+        <attr name="verify_text_color" format="color"/>
+        <attr name="verify_text_size" format="dimension"/>
+        <attr name="verify_progress_color" format="color"/>
+        <attr name="verify_image_thumb" format="reference"/>
+        <attr name="verify_image_finish" format="reference"/>
+        <attr name="verify_radius_image_thumb" format="dimension"/>
+    </declare-styleable>
+    
+</resources>

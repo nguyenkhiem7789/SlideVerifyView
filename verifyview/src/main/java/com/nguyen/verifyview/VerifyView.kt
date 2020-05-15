@@ -7,6 +7,10 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.core.content.ContextCompat
 
+interface VerifyCheckedListener {
+    fun onChecked()
+}
+
 class VerifyView : View {
 
     companion object {
@@ -17,6 +21,10 @@ class VerifyView : View {
         const val DEFAULT_STROKE_WIDTH = 1
 
         const val DEFAULT_TEXT_COLOR = Color.WHITE
+
+        const val DEFAULT_TEXT_SIZE = 24
+
+        const val DEFAULT_RADIUS_IMAGE = 15
     }
 
     private var bgColor = DEFAULT_BACKGROUND_COLOR
@@ -28,6 +36,14 @@ class VerifyView : View {
     private var progressColor = ContextCompat.getColor(context, R.color.default_progress)
 
     private var textColor = DEFAULT_TEXT_COLOR
+
+    private var textSize = DEFAULT_TEXT_SIZE
+
+    private var imageThumb = R.drawable.thumb
+
+    private var imageFinish = R.drawable.checked
+
+    private var radiusImageThumb = DEFAULT_RADIUS_IMAGE
 
     private var borderBgRect: RectF? = null
 
@@ -41,7 +57,7 @@ class VerifyView : View {
 
     private var editable: Boolean = false
 
-    private var text: String? = null
+    private var text: String? = resources.getString(R.string.default_text)
 
     private var xTouch: Float = 0.0F
         set(value) {
@@ -89,11 +105,29 @@ class VerifyView : View {
         Paint()
     }
 
+    var listener: VerifyCheckedListener? = null
+
+    fun setVerifyCheckedListener(listener: VerifyCheckedListener) {
+        this.listener = listener
+    }
+
     constructor(context: Context) : this(context, null) {
         init()
     }
 
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0) {
+        var typeArray = context.obtainStyledAttributes(attrs, R.styleable.VerifyView)
+        bgColor = typeArray.getColor(R.styleable.VerifyView_verify_bg_color, Color.parseColor("#dbdbdb"))
+        strokeColor = typeArray.getColor(R.styleable.VerifyView_verify_stroke_color, Color.parseColor("#000000"))
+        strokeWidth = typeArray.getDimensionPixelSize(R.styleable.VerifyView_verify_stroke_width, DEFAULT_STROKE_WIDTH)
+        textColor = typeArray.getColor(R.styleable.VerifyView_verify_text_color, Color.parseColor("#ffffff"))
+        textSize = typeArray.getDimensionPixelSize(R.styleable.VerifyView_verify_text_size, DEFAULT_TEXT_SIZE)
+        progressColor = typeArray.getColor(R.styleable.VerifyView_verify_progress_color, Color.parseColor("#2f7cd3"))
+        imageThumb = typeArray.getResourceId(R.styleable.VerifyView_verify_image_thumb, R.drawable.thumb)
+        imageFinish = typeArray.getResourceId(R.styleable.VerifyView_verify_image_finish, R.drawable.checked)
+        text = typeArray.getString(R.styleable.VerifyView_verify_text)
+        radiusImageThumb = typeArray.getDimensionPixelSize(R.styleable.VerifyView_verify_radius_image_thumb, DEFAULT_RADIUS_IMAGE)
+        typeArray.recycle()
         init()
     }
 
@@ -106,7 +140,6 @@ class VerifyView : View {
     }
 
     fun init() {
-        text = resources.getString(R.string.default_text)
         // background paint
         bgPaint.isAntiAlias = true
         bgPaint.color = bgColor
@@ -128,7 +161,7 @@ class VerifyView : View {
 
         // thumb
         thumbImagePaint.isFilterBitmap = true
-        thumbImageBitmap = BitmapFactory.decodeResource(resources, R.drawable.thumb)
+        thumbImageBitmap = BitmapFactory.decodeResource(resources, imageThumb)
 
         thumbPaint.isAntiAlias = true
         thumbPaint.color = Color.WHITE
@@ -140,16 +173,16 @@ class VerifyView : View {
             height.toFloat() - strokeWidth
         )
         thumbImageRect = RectF(
-            thumbRect!!.width() / 2 - 12,
-            thumbRect!!.height() / 2 - 12,
-            thumbRect!!.width() / 2 + 12F,
-            thumbRect!!.height() / 2 + 12F
+            thumbRect!!.width() / 2 - radiusImageThumb,
+            thumbRect!!.height() / 2 - radiusImageThumb,
+            thumbRect!!.width() / 2 + radiusImageThumb,
+            thumbRect!!.height() / 2 + radiusImageThumb
         )
 
         // finish
         finishImagePaint.isFilterBitmap = true
         finishImagePaint.color = Color.TRANSPARENT
-        finishImageBitmap = BitmapFactory.decodeResource(resources, R.drawable.checked)
+        finishImageBitmap = BitmapFactory.decodeResource(resources, imageFinish)
 
         finishPaint.isAntiAlias = true
         finishPaint.color = Color.TRANSPARENT
@@ -161,10 +194,10 @@ class VerifyView : View {
             height.toFloat() - strokeWidth
         )
         finishImageRect = RectF(
-            width - height / 2 - strokeWidth.toFloat() - 12,
-            height / 2.toFloat() - 12,
-            width - height / 2 - strokeWidth.toFloat() + 12F,
-            height / 2.toFloat() + 12F
+            width - height / 2 - strokeWidth.toFloat() - radiusImageThumb,
+            height / 2.toFloat() - radiusImageThumb,
+            width - height / 2 - strokeWidth.toFloat() + radiusImageThumb,
+            height / 2.toFloat() + radiusImageThumb
         )
 
         // progress
@@ -181,7 +214,7 @@ class VerifyView : View {
         // text
         textPaint.isAntiAlias = true
         textPaint.textAlign = Paint.Align.CENTER
-        textPaint.textSize = 16 * resources.displayMetrics.density
+        textPaint.textSize = textSize.toFloat()
         textPaint.color = textColor
     }
 
@@ -223,6 +256,7 @@ class VerifyView : View {
             strokeWidth.toFloat(), strokeWidth.toFloat(), width.toFloat() - strokeWidth,
             height.toFloat() - strokeWidth
         )
+
         borderBgRect!!.set(
             strokeWidth.toFloat(),
             strokeWidth.toFloat(),
@@ -238,10 +272,10 @@ class VerifyView : View {
         )
 
         finishImageRect!!.set(
-            width - height / 2 - strokeWidth.toFloat() - 12,
-            height / 2.toFloat() - 12,
-            width - height / 2 - strokeWidth.toFloat() + 12F,
-            height / 2.toFloat() + 12F
+            width - height / 2 - strokeWidth.toFloat() - radiusImageThumb,
+            height / 2.toFloat() - radiusImageThumb,
+            width - height / 2 - strokeWidth.toFloat() + radiusImageThumb,
+            height / 2.toFloat() + radiusImageThumb
         )
     }
 
@@ -250,11 +284,10 @@ class VerifyView : View {
         ///draw background
         canvas.drawRoundRect(borderBgRect!!, 8F, 8F, borderBgPaint)
         canvas.drawRoundRect(bgRect!!, 8F, 8F, bgPaint)
-
         progressRect!!.set(
             strokeWidth.toFloat(),
             strokeWidth.toFloat(),
-            height/2.toFloat() + xTouch,
+            if(height/2.toFloat() + xTouch < width) height/2.toFloat() + xTouch else width - strokeWidth.toFloat(),
             height.toFloat() - strokeWidth.toFloat())
         canvas.drawRoundRect(progressRect!!, 8F, 8F, progressPaint)
         thumbRect!!.set(
@@ -264,10 +297,10 @@ class VerifyView : View {
             height.toFloat() - strokeWidth
         )
         thumbImageRect!!.set(
-            thumbRect!!.width() / 2 - 12 + xTouch,
-            thumbRect!!.height() / 2 - 12,
-            thumbRect!!.width() / 2 + 12 + xTouch,
-            thumbRect!!.height() / 2 + 12
+            thumbRect!!.width() / 2 - radiusImageThumb + xTouch,
+            thumbRect!!.height() / 2 - radiusImageThumb,
+            thumbRect!!.width() / 2 + radiusImageThumb + xTouch,
+            thumbRect!!.height() / 2 + radiusImageThumb
         )
         canvas.drawRoundRect(thumbRect!!, 8F, 8F, thumbPaint)
         canvas.drawBitmap(thumbImageBitmap!!, null, thumbImageRect!!, thumbImagePaint)
@@ -295,6 +328,7 @@ class VerifyView : View {
                         thumbImagePaint.color = Color.TRANSPARENT
                         finishPaint.color = Color.WHITE
                         finishImagePaint.color = Color.WHITE
+                        this.listener?.onChecked()
                     }
                 }
             }
