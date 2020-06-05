@@ -35,7 +35,7 @@ class VerifyView : View {
 
     private var progressColor = ContextCompat.getColor(context, R.color.default_progress)
 
-    private var textColor = DEFAULT_TEXT_COLOR
+    public var textColor = DEFAULT_TEXT_COLOR
 
     private var textSize = DEFAULT_TEXT_SIZE
 
@@ -57,7 +57,7 @@ class VerifyView : View {
 
     private var editable: Boolean = false
 
-    private var text: String? = resources.getString(R.string.default_text)
+    public var text: String? = resources.getString(R.string.default_text)
 
     private var xTouch: Float = 0.0F
         set(value) {
